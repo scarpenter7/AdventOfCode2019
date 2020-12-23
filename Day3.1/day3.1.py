@@ -63,4 +63,5 @@ if __name__ == "__main__":
         wireSegmentsList = contructGrid(wires)
         intersectionPts = getIntersections(wireSegmentsList)
         intersectionPts.remove((0,0))
+        print("Answer:")
         print(min([abs(pt[0]) + abs(pt[1]) for pt in intersectionPts]))
