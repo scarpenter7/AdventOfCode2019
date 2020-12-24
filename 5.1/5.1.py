@@ -1,5 +1,3 @@
-# you need to determine what pair of inputs produces the output 19690720.
-
 def run(codes):
     opCodeIndex = 0
     while True:
