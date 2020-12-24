@@ -17,7 +17,6 @@ def run(codes):
             return
 
 if __name__ == "__main__":
-    codesOriginal = []
     with open("code.txt", 'r') as myfile:
         input = myfile.read()
         codesOriginal = [int(num) for num in input.split(',')]
