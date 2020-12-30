@@ -40,8 +40,7 @@ def executeOp(codes, input, modes, operation, opCodeIndex):
     elif operation == [0, 8]:
         return equals(codes, param1, param2, param3, opCodeIndex, modes)
     else:
-        print("ERROR: " + str(codes[opCodeIndex]))
-        return
+        raise IndexError("Invalid OpCode: " + str(codes[opCodeIndex] + "\nOpCodeIndex: " + str(opCodeIndex)))
 
 def getNumsFromModes(codes, params, modes):
     modesCopy = modes.copy()
