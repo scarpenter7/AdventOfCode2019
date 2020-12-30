@@ -1,4 +1,4 @@
-def run(codes):
+def run(codes, input):
     opCodeIndex = 0
     while True:
         opCode = codes[opCodeIndex]
@@ -6,7 +6,8 @@ def run(codes):
         operation = modes[3:]
         if operation == [9, 9]: # Halt
             return codes
-        opCodeIndex = executeOp(codes, modes, operation, opCodeIndex)
+        opCodeIndex = executeOp(codes, input, modes, operation, opCodeIndex)
+    # for opcode 4, return a list of nums instead of printing them
 
 def processOpCode(opCode):
     modes = [int(num) for num in str(opCode)]
@@ -14,7 +15,7 @@ def processOpCode(opCode):
         modes.insert(0, 0)
     return modes
 
-def executeOp(codes, modes, operation, opCodeIndex):
+def executeOp(codes, input, modes, operation, opCodeIndex):
     #Returns new location of instruction ptr
     param1 = codes[opCodeIndex + 1]
     param2 = codes[opCodeIndex + 2]
@@ -25,10 +26,10 @@ def executeOp(codes, modes, operation, opCodeIndex):
     elif operation == [0, 2]:  # Multiply
         return multiply(codes, param1, param2, param3, opCodeIndex, modes)
     elif operation == [0, 3]:  # Store input at address
-        codes[param1] = 5  # Input = 1
+        codes[param1] = input
         return opCodeIndex + 2
     elif operation == [0, 4]:  # Output element at address
-        print(codes[param1])
+        print(codes[param1]) # for opcode 4, return a list of nums instead of printing them
         return opCodeIndex + 2
     elif operation == [0, 5]:  # Jump if true
         return jumpIfTrue(codes, param1, param2, opCodeIndex, modes)
@@ -44,14 +45,15 @@ def executeOp(codes, modes, operation, opCodeIndex):
 
 def getNumsFromModes(codes, params, modes):
     modesCopy = modes.copy()
-    modesCopy.reverse()
+    digitModes = modesCopy[:3]
+    digitModes.reverse()
     nums = []
 
     for i, param in enumerate(params):
         num = None
-        if modesCopy[i] == 0:
+        if digitModes[i] == 0:
             num = codes[param]
-        elif modesCopy[i] == 1:
+        elif digitModes[i] == 1:
             num = param
         nums.append(num)
 
@@ -75,7 +77,7 @@ def jumpIfTrue(codes, param1, param2, opCodeIndex, modes):
 
 def jumpIfFalse(codes, param1, param2, opCodeIndex, modes):
     nums = getNumsFromModes(codes, [param1, param2], modes)
-    if nums[0] != 0:
+    if nums[0] == 0:
         return nums[1]
     return opCodeIndex + 3
 
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     with open("input.txt", 'r') as myfile:
         input = myfile.read()
         originalCodes = [int(num) for num in input.split(',')]
-    finalCodes = run(originalCodes)
+    finalCodes = run(originalCodes, 5)
 
 
 
