@@ -1,21 +1,28 @@
 import itertools
-
-#INFINITE LOOP BUG???
+import queue
 
 class Machine(object):
     def __init__(self, codes, phaseSettings):
-        codesCopy = codes.copy()
-        self.amps = [Amp(codesCopy, phaseSettings[i], i) for i in range(5)]
-        self.amps[0].input = 0
+        self.amps = [Amp(codes.copy(), phaseSettings[i], i) for i in range(5)]
+        self.initializePipes()
+        print("Running with phase settings: " + str(phaseSettings))
+
+    def initializePipes(self):
+        for i in range(5):
+            amp1 = self.amps[i]
+            amp2 = self.amps[(i + 1) % 5]
+            pipe = queue.Queue()
+            amp1.outputQueue = pipe
+            amp2.inputQueue = pipe
+        self.amps[0].inputQueue.put(0)
 
     def runMachine(self):
         while not self.amps[-1].halted:
             for i, amp in enumerate(self.amps):
                 amp.runAmp()
-                if amp.output is not None:
-                    nextAmpIndex = (i + 1) % 5
-                    self.amps[nextAmpIndex].input = amp.output
-        return self.amps[-1].output
+        finalOutput = self.amps[4].outputQueue.get()
+        print("Final output: " + str(finalOutput))
+        return finalOutput
 
 class Amp(object):
     def __init__(self, codes, phaseSetting, ID):
@@ -23,13 +30,14 @@ class Amp(object):
         self.phaseSetting = phaseSetting
         self.phaseSettingUsed = False
         self.opCodeIndex = 0
-        self.input = None
-        self.output = None
+        self.inputQueue = None
+        self.outputQueue = None
         self.ID = ID
         self.paused = True
         self.halted = False
 
     def runAmp(self):
+        print("Amp " + str(self.ID) + " started.")
         if self.halted:
             raise RuntimeError("This amplifier is halted!")
         self.paused = False
@@ -46,9 +54,12 @@ class Amp(object):
         return modes
 
     def executeOp(self, operation, modes):
-        param1 = self.memory[self.opCodeIndex + 1]
-        param2 = self.memory[self.opCodeIndex + 2]
-        param3 = self.memory[self.opCodeIndex + 3]
+        param1 = None
+        param2 = None
+        param3 = None
+        if self.opCodeIndex + 1 < len(self.memory): param1 = self.memory[self.opCodeIndex + 1]
+        if self.opCodeIndex + 2 < len(self.memory): param2 = self.memory[self.opCodeIndex + 2]
+        if self.opCodeIndex + 3 < len(self.memory): param3 = self.memory[self.opCodeIndex + 3]
 
         if operation == [0, 1]:  # Add
             self.add(param1, param2, param3, modes)
@@ -66,11 +77,11 @@ class Amp(object):
             self.isLessThan(param1, param2, param3, modes)
         elif operation == [0, 8]:  # equals
             self.equals(param1, param2, param3, modes)
-        elif operation == [0, 9]: # Halt
+        elif operation == [9, 9]: # Halt
             self.halt()
         else:
-            raise IndexError("Invalid OpCode: " + str(self.memory[self.opCodeIndex] +
-                                                      "\nOpCodeIndex: " + str(self.opCodeIndex)))
+            raise IndexError("Invalid OpCode: " + str(self.memory[self.opCodeIndex]) +
+                                                      "\nOpCodeIndex: " + str(self.opCodeIndex))
 
     def getNumsFromModes(self, params, modes):
         modesCopy = modes.copy()
@@ -103,31 +114,33 @@ class Amp(object):
             useInput = self.phaseSetting
             self.phaseSettingUsed = True
         else:
-            if self.input is None: #Need to pause this amp until we receive imput
+            if self.inputQueue.empty(): #Need to pause this amp until we receive input
                 self.pause()
                 return
             else:
-                useInput = self.input
+                useInput = self.inputQueue.get()
         self.memory[param1] = useInput
         self.opCodeIndex += 2
 
     def storeOutput(self, param1):
         output = self.memory[param1]
         # print(output)
-        self.output = output
+        self.outputQueue.put(output)
         self.opCodeIndex += 2
 
     def jumpIfTrue(self, param1, param2, modes):
         nums = self.getNumsFromModes([param1, param2], modes)
         if nums[0] != 0:
-            return nums[1]
-        self.opCodeIndex += 3
+            self.opCodeIndex = nums[1]
+        else:
+            self.opCodeIndex += 3
 
     def jumpIfFalse(self, param1, param2, modes):
         nums = self.getNumsFromModes([param1, param2], modes)
         if nums[0] == 0:
-            return nums[1]
-        self.opCodeIndex += 3
+            self.opCodeIndex = nums[1]
+        else:
+            self.opCodeIndex += 3
 
     def isLessThan(self, param1, param2, param3, modes):
         nums = self.getNumsFromModes([param1, param2], modes)
