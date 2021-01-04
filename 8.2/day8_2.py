@@ -26,6 +26,6 @@ if __name__ == "__main__":
     numLayers = len(nums) // layerSize
     layers = [np.array(nums[(i * layerSize):((i + 1) * layerSize)]).reshape((6, 25)) for i in range(numLayers)]
     finalPic = decodeLayers(layers)
-    print(finalPic)
+    print(finalPic) #RUZBP
 
 
